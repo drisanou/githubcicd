@@ -1,4 +1,4 @@
-name: Java CI with Maven
+name: Java CI with Maven + Docker
 
 on:
   push:
@@ -24,5 +24,23 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
-        run: ./mvnw -B clean package --file pom.xml
+      - name: Build (jar)
+        run: ./mvnw -B -DskipTests clean package
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/sa-analysys:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/sa-analysys:${{ github.sha }}
